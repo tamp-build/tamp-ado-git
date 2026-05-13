@@ -216,9 +216,11 @@ public sealed class AdoGitTests
     }
 
     [Fact]
-    public void Executable_Is_Tool_Path()
+    public void Executable_Matches_Tool_Path()
     {
+        // AbsolutePath normalization differs by OS (Windows resolves "/fake/git" to
+        // "C:\fake\git"); we assert the basename rather than the full string.
         var plan = AdoGit.Fetch(FakeTool(), FakePat());
-        Assert.Equal("/fake/git", plan.Executable);
+        Assert.EndsWith("git", plan.Executable.TrimEnd(System.IO.Path.DirectorySeparatorChar));
     }
 }
