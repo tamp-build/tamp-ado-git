@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <RootNamespace>Tamp.AdoGit</RootNamespace>
+    <AssemblyName>Tamp.AdoGit</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package">
+    <PackageId>Tamp.AdoGit</PackageId>
+    <Description>PAT-injected git wrapper for Azure DevOps. Wraps `git -c http.extraHeader=AUTHORIZATION: Basic &lt;pat-base64&gt;` so every fetch / push / clone against ADO authenticates with a Secret-typed PAT, bypassing Git Credential Manager identity confusion on multi-tenant machines. Eliminates the most-repeated boilerplate in ADO-targeted Tamp build scripts.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(TampCorePath)" Condition="'$(TampCoreMode)' == 'project'" />
+    <PackageReference Include="Tamp.Core" Condition="'$(TampCoreMode)' == 'package'" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>
