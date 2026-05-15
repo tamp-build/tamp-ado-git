@@ -71,6 +71,21 @@ public static class AdoGit
         return s.ToCommandPlan(tool, pat);
     }
 
+    // ---- Object-init overloads (TAM-161) ----
+    // Parallel surface to the fluent verbs above. Both styles produce identical
+    // CommandPlans; fluent stays canonical in docs and `tamp init` templates.
+    //
+    //     AdoGit.Push(Git, AdoPat, new() { Remote = "origin", Ref = "HEAD:refs/heads/main" });
+    //
+    // is equivalent to:
+    //
+    //     AdoGit.Push(Git, AdoPat, s => s.SetRemote("origin").SetRef("HEAD:refs/heads/main"));
+    public static CommandPlan Fetch(Tool tool, Secret pat, AdoGitFetchSettings settings) => Plan(tool, pat, settings);
+    public static CommandPlan Push(Tool tool, Secret pat, AdoGitPushSettings settings) => Plan(tool, pat, settings);
+    public static CommandPlan PullRebase(Tool tool, Secret pat, AdoGitPullRebaseSettings settings) => Plan(tool, pat, settings);
+    public static CommandPlan Clone(Tool tool, Secret pat, AdoGitCloneSettings settings) => Plan(tool, pat, settings);
+    public static CommandPlan LsRemote(Tool tool, Secret pat, AdoGitLsRemoteSettings settings) => Plan(tool, pat, settings);
+
     private static CommandPlan Build<T>(Tool tool, Secret pat, Action<T>? configure)
         where T : AdoGitSettingsBase, new()
     {
@@ -78,6 +93,15 @@ public static class AdoGit
         if (pat is null) throw new ArgumentNullException(nameof(pat));
         var settings = new T();
         configure?.Invoke(settings);
+        return settings.ToCommandPlan(tool, pat);
+    }
+
+    private static CommandPlan Plan<T>(Tool tool, Secret pat, T settings)
+        where T : AdoGitSettingsBase
+    {
+        if (tool is null) throw new ArgumentNullException(nameof(tool));
+        if (pat is null) throw new ArgumentNullException(nameof(pat));
+        if (settings is null) throw new ArgumentNullException(nameof(settings));
         return settings.ToCommandPlan(tool, pat);
     }
 
