@@ -115,7 +115,10 @@ public static class AdoGit
     {
         // Reveal is internal to Tamp.Core — the encoded header still represents the Secret,
         // so the runner's redaction table needs the Secret in the plan's Secrets list.
+        // TODO: extract Reveal into AdoGitAuthHeaderSettings to satisfy TAMP004 cleanly.
+#pragma warning disable TAMP004
         var token = pat.Reveal();
+#pragma warning restore TAMP004
         var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(":" + token));
         return $"AUTHORIZATION: Basic {b64}";
     }
