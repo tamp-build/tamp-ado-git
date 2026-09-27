@@ -7,6 +7,16 @@ versions follow [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-09-27
+
+### Fixed
+
+- **Redaction now covers the base64 auth credential, not just the raw PAT** ([#5](https://github.com/tamp-build/tamp-ado-git/issues/5)). The `-c http.extraHeader=AUTHORIZATION: Basic <b64>` placed on the command line contains `base64(":" + pat)` — a *different literal* than the raw PAT, so registering only the PAT left the transmitted credential unredacted (redaction matches values literally). The command plan now registers **both** the PAT and its derived base64 credential (via `Secret.Derive`, Tamp.Core 1.15.2), so either form is scrubbed from any logged output / `--capture-logs` artifact. Latent (git doesn't echo `-c` values today) but one behaviour-change away, and capture logs are published as CI artifacts. Requires **Tamp.Core ≥ 1.15.2**.
+
+### Changed
+
+- Bumped `Tamp.Core` pin 1.10.0 → 1.15.2 (for `Secret.Derive`).
+
 ## [0.1.1] — 2026-09-27
 
 ### Added
