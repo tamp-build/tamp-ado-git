@@ -28,9 +28,12 @@ namespace Tamp.AdoGit;
 /// Target Push  => _ => _.Executes(() =&gt; AdoGit.Push(Git, AdoPat, s =&gt; s.SetRemote("origin").SetRef("HEAD:refs/heads/main")));
 /// </code>
 /// <para>
-/// The PAT is added to the <see cref="CommandPlan.Secrets"/> list so the runner's redaction
-/// table covers it in any logged output (the b64-encoded header is what would actually appear
-/// on the command line; it's a derivative of the Secret and is redacted via the same path).
+/// Both the PAT <b>and</b> its base64 credential — the <c>base64(":" + pat)</c> that actually
+/// appears on the command line inside the auth header — are added to the
+/// <see cref="CommandPlan.Secrets"/> list. The encoded form is a <em>different literal</em>, so it is
+/// registered as a derived <see cref="Secret"/> (via <see cref="Secret.Derive"/>) rather than relying
+/// on the raw PAT alone, which (redaction being a literal match) would not cover it. The runner's
+/// redaction table then scrubs either form from any logged output.
 /// </para>
 /// </remarks>
 public static class AdoGit
@@ -113,13 +116,21 @@ public static class AdoGit
     /// </summary>
     internal static string BuildAuthHeader(Secret pat)
     {
-        // Reveal is internal to Tamp.Core — the encoded header still represents the Secret,
-        // so the runner's redaction table needs the Secret in the plan's Secrets list.
-        // TODO: extract Reveal into AdoGitAuthHeaderSettings to satisfy TAMP004 cleanly.
+        // Building the header needs the raw value. That's fine here: the transmitted credential
+        // (BuildAuthToken) is registered as a DERIVED Secret in ToCommandPlan, so the encoded form
+        // — not just the raw PAT — is covered by the redaction table.
 #pragma warning disable TAMP004
-        var token = pat.Reveal();
+        return "AUTHORIZATION: Basic " + BuildAuthToken(pat.Reveal());
 #pragma warning restore TAMP004
-        var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(":" + token));
-        return $"AUTHORIZATION: Basic {b64}";
     }
+
+    /// <summary>
+    /// The base64 credential transmitted in the auth header — <c>base64(":" + pat)</c>. This is the
+    /// decodable secret material actually placed on the command line, and a <em>different literal</em>
+    /// than the raw PAT — so it is registered as a derived <see cref="Secret"/>
+    /// (<see cref="Secret.Derive"/>) when the command plan is built, so the runner's redaction table
+    /// scrubs it. Redaction matches literally; registering only the raw PAT would leave this uncovered.
+    /// </summary>
+    internal static string BuildAuthToken(string token)
+        => Convert.ToBase64String(Encoding.UTF8.GetBytes(":" + token));
 }

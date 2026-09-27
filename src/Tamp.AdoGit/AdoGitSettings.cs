@@ -43,7 +43,10 @@ public abstract class AdoGitSettingsBase
             Arguments = args,
             Environment = new Dictionary<string, string>(EnvironmentVariables),
             WorkingDirectory = WorkingDirectory ?? tool.WorkingDirectory,
-            Secrets = new[] { pat },
+            // Register BOTH the raw PAT and the base64 credential actually transmitted in the auth
+            // header. Redaction is a literal match, so the raw PAT alone would not scrub the encoded
+            // form that appears on the command line (tamp-ado-git#5).
+            Secrets = new[] { pat, pat.Derive(AdoGit.BuildAuthToken) },
         };
     }
 }

@@ -45,6 +45,29 @@ public sealed class AdoGitTests
         Assert.Contains(pat, plan.Secrets);
     }
 
+    // tamp-ado-git#5: the base64 credential actually transmitted in the auth header is a different
+    // literal than the raw PAT; it must be registered as a derived Secret so redaction covers it.
+    [Fact]
+    public void Plan_Registers_Derived_Base64_Credential_So_Redaction_Covers_The_Header()
+    {
+        var pat = new Secret("ado-pat", "hunter2");
+        var plan = AdoGit.Fetch(FakeTool(), pat);
+
+        var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(":hunter2"));
+
+        // Two secrets registered: the raw PAT and its derived base64 credential.
+        Assert.Equal(2, plan.Secrets.Count);
+        Assert.Contains(pat, plan.Secrets);
+        Assert.Contains(plan.Secrets, s => s.Reveal() == b64);
+
+        // And redaction built from the plan scrubs the transmitted credential out of the argv.
+        var table = new RedactionTable();
+        table.RegisterAll(plan);
+        var redactedArgs = table.Redact(string.Join(" ", plan.Arguments));
+        Assert.DoesNotContain(b64, redactedArgs);        // the encoded credential is gone
+        Assert.DoesNotContain("hunter2", redactedArgs);  // and so is the raw PAT
+    }
+
     [Fact]
     public void Plan_Rejects_Null_Tool()
     {
